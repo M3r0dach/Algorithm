@@ -29,6 +29,7 @@ void dfs(int u) {
             scco[v] = scco_cnt;
         }
         scco[u] = scco_cnt;
+        S.pop();
     }
 }
 int main() {
