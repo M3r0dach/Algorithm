@@ -11,6 +11,7 @@
     - 旋转卡壳法
     - 矩形面积求并
     - Geo模板
+    - 四叉树
 1. 数论
     - 离散对数
     - 欧拉函数
@@ -36,6 +37,9 @@
 	- 高精度
 1. 图论
     - LCA tarjian
+    - 生成树计数
+    - 最小生成树计数
+    - 边双连通分量
 1. 字符串
     - 后缀数组
     - 最长回文子串
@@ -43,7 +47,9 @@
     - LCP
     - 后缀自动机
     - 最小表示法
-
+1. 树上路径问题
+    - 树链剖分
+    - 点分治
 
 * * *
 
@@ -790,6 +796,140 @@ int HPI(Line line[],int n,Point ans[])
     return cnt;
 }
 
+```
+## 四叉树
+```c++
+//HDU-6183
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1<<15;
+typedef long long ll;
+typedef double db;
+#define CLR(x) memset(x, 0, sizeof(x))
+const ll mod = 1e9 + 7;
+const int Cap = 64;
+const int level = 10;
+struct Point{
+    int x, y, c;
+    Point(){}
+    Point(int x, int y, int c=0)
+    :x(x), y(y), c(c){}
+};
+
+struct Rect{
+    int x, y, L;
+    Rect(int x=0, int y=0, int L=0)
+    :x(x),y(y),L(L){}
+    int midx() {
+        return x+L/2;
+    }
+    int midy() {
+        return y+L/2;
+    }
+    bool in(Point p) {
+        return x<=p.x&&p.x<x+L&&y<=p.y&&p.y<y+L;
+    }
+};
+struct Area{
+    int x1, y1, y2;
+    Area(int x1=0, int y1=0, int y2=0)
+    :x1(x1), y1(y1), y2(y2){}
+    bool in(const Point& p) {
+        return 1<=p.x&&p.x<=x1&&y1<=p.y&&p.y<=y2;
+    }
+    bool insec(const Rect& b) {
+        int l=max(1, b.x), r=min(x1, b.x+b.L-1);
+        int s=max(y1, b.y), h=min(y2, b.y+b.L-1);
+        return l<=r&&s<=h;
+    }
+    bool have(const Rect& b) {
+        return 1<=b.x&&b.x+b.L-1<=x1&&y1<=b.y&&b.y+b.L-1<=y2;
+    }
+};
+struct Node{
+    Rect bound;
+    vector<Point> P;
+    bitset<64> st;
+    int ch[4], sz;
+    void split();
+    void insert(Point& p);
+    void find(Area& A);
+}node[maxn];
+int tot;
+
+int newnode(const Rect& rt) {
+    node[tot].bound=rt;
+    node[tot].P.clear();
+    node[tot].sz=0;
+    node[tot].st.reset();
+    CLR(node[tot].ch);
+    return tot++;
+}
+void Node::split() {
+    ch[0]=newnode(Rect(bound.x, bound.y, bound.L/2));
+    ch[1]=newnode(Rect(bound.midx(), bound.y, bound.L/2));
+    ch[2]=newnode(Rect(bound.midx(), bound.midy(), bound.L/2));
+    ch[3]=newnode(Rect(bound.x, bound.midy(), bound.L/2));
+    for(int i=0; i<P.size(); ++i)
+        for(int j=0; j<4; ++j)
+            node[ch[j]].insert(P[i]);
+    P.clear();
+}
+void Node::insert(Point &p) {
+    if(!bound.in(p)) return;
+    ++sz;
+    st.set(p.c);
+    if(!ch[0]) {
+        P.push_back(p);
+        if(P.size()==Cap&&bound.L>1)
+            split();
+        return;
+    }
+    for(int i=0; i<4; ++i)
+        node[ch[i]].insert(p);
+}
+bitset<64> ans;
+void Node::find(Area& A) {
+    if(!A.insec(bound)) return;
+    if(A.have(bound)) ans |= st;
+    else if(!ch[0]) {
+        for(int i=0; i<P.size(); ++i)
+            if(A.in(P[i])) ans.set(P[i].c);
+    }
+    else {
+        for(int i=0; i<4; ++i)
+            node[ch[i]].find(A);
+    }
+}
+void init() {
+    tot=1;
+    newnode(Rect(1,1,1<<20));
+}
+void Add(int x, int y, int c) {
+    Point p=Point(x,y,c);
+    node[1].insert(p);
+}
+int Ask(int x1, int y1, int y2) {
+    Area A(x1, y1, y2);
+    ans.reset();
+    node[1].find(A);
+    return ans.count();
+}
+
+int main(){
+    int cmd;
+    while(~scanf("%d", &cmd)) {
+        if(cmd==0) init();
+        else if(cmd==3) break;
+        else {
+            int a, b, c;
+            scanf("%d%d%d", &a, &b, &c);
+            if(cmd==1) Add(a,b,c);
+            else printf("%d\n", Ask(a, b, c));
+        }
+    }
+    return 0;
+}
 ```
 
 * * *
@@ -1850,7 +1990,7 @@ int main() {
 
 ***
 
-# 数学
+# 离散数学
 ## FFT
 ```c++
 #include <bits/stdc++.h>//don't use this in poj, fzu, zoj
@@ -2623,7 +2763,363 @@ int main() {
     return 0;
 }
 ```
+---
 
+## 生成树计数
+```c++
+//https://vjudge.net/contest/169617#problem/J
+#include<cstdio>
+#include<cstring>
+#include<cmath>
+#include<algorithm>
+using namespace std;
+const int MAXN = 56;
+typedef long long ll;
+bool g[MAXN][MAXN];
+ll a[MAXN][MAXN];
+ll eliminate(int n) {
+    ll res=1;
+    for(int i=0; i<n; ++i) {
+        for(int j=i+1; j<n; ++j) {
+            int x=i, y=j;
+            while(a[y][i]) {
+                ll t = a[x][i]/a[y][i];
+                for(int k=0; k<n; ++k)
+                    a[x][k] -= a[y][k]*t;
+                swap(x,y);
+            }
+            if(x!=i) {
+                for(int k=0; k<n; ++k)
+                    swap(a[x][k], a[i][k]);
+            }
+        }
+        if(a[i][i]==0) return 0;
+        res *= a[i][i];
+    }
+    if(res<0) res*=-1;
+    return res;
+}
+int main() {
+    int n, m, t;
+    scanf("%d", &t);
+    while(t--) {
+        scanf("%d%d", &n, &m);
+        memset(g, false, sizeof(g));
+        memset(a, 0, sizeof(a));
+        while(m--) {
+            int u, v;
+            scanf("%d%d", &u, &v);
+            --u, --v;
+            g[u][v] = g[v][u] = true;
+        }
+        for(int i=0; i<n; ++i)
+            for(int j=i+1; j<n; ++j)
+                if(g[i][j]) {
+                    ++a[i][i], ++a[j][j];
+                    a[i][j] = a[j][i] = -1;
+                }
+        printf("%lld\n", eliminate(n-1));
+    }
+    return 0;
+}
+```
+
+## 最小生成树计数
+```c++
+//https://vjudge.net/problem/HYSBZ-1016
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <algorithm>
+using namespace std;
+const int MAXN = 128;
+const int MAXM = 1024;
+const int MOD = 31011;
+
+struct Edge{
+    int u, v, d;
+    bool operator < (const Edge& b) const
+    {
+        return d<b.d;
+    }
+}e[MAXM];
+int unit[MAXN], fa[MAXN];
+int n, m;
+bool vis[MAXN];
+int A[MAXN][MAXN], B[MAXN][MAXN];
+vector<pair<int,int> > g[MAXN];
+vector<int> v;
+
+int findroot(int x, int *p) {
+    if(x==p[x]) return x;
+    return p[x]=findroot(p[x], p);
+}
+int det(int A[][MAXN], int n) {
+    int ret=1, sgn=0;
+    for(int i=0; i<n; ++i) {
+        for (int j = i+1; j <n; ++j) {
+            int x=i, y=j;
+            while (A[y][i]) {
+                int t=A[x][i]/A[y][i]%MOD;
+                for(int k=i; k<n; ++k)
+                    A[x][k] = (A[x][k]-A[y][k]%MOD*t)%MOD;
+                swap(x,y);
+            }
+            if(x!=i) {
+                for(int k=i; k<=n; ++k)
+                    swap(A[x][k], A[y][k]);
+                ++sgn;
+            }
+        }
+        if(A[i][i]==0) return 0;
+        else ret=ret*A[i][i]%MOD;
+    }
+    if(sgn&1) ret=-ret;
+    return ret;
+}
+int make_graph(int c) {
+    memset(vis, false, sizeof(vis));
+    memset(A, 0, sizeof(A));
+    memset(B, 0, sizeof(B));
+    for(int i=0; i<g[c].size(); ++i) {
+        int u=g[c][i].first;
+        int v=g[c][i].second;
+        vis[u]=vis[v]=true;
+        ++B[u][v], ++B[v][u];
+    }
+    v.clear();
+    for(int i=1; i<=n; ++i)
+        if(vis[i]) v.push_back(i);
+    for(int i=0; i<v.size(); ++i)
+        for(int j=i+1; j<v.size(); ++j)
+        {
+            int a=v[i], b=v[j];
+            if(B[a][b]) {
+                A[i][j] -= B[a][b];
+                A[j][i] -= B[a][b];
+                A[i][i] += B[a][b];
+                A[j][j] += B[a][b];
+            }
+        }
+    return det(A, v.size()-1);
+}
+int main() {
+    scanf("%d%d", &n, &m);
+    for(int i=0; i<m; ++i)
+        scanf("%d%d%d", &e[i].u, &e[i].v, &e[i].d);
+    sort(e, e+m);
+    for(int i=1; i<=n; ++i)
+        fa[i] = unit[i] = i;
+    int res=1;
+    for(int i=0; i<m; ) {
+        int j=i+1;
+        while (j<m&&e[j].d==e[i].d) ++j;
+        for(int k=i; k<j; ++k) {
+            int u=findroot(e[k].u, fa);
+            int v=findroot(e[k].v, fa);
+            if(u!=v) fa[u] = v;
+        }
+        for(int k=1; k<=n; ++k)
+            g[k].clear();
+        for(int k=i; k<j; ++k) {
+            int u=findroot(e[k].u, unit);
+            int v=findroot(e[k].v, unit);
+            int c=findroot(e[k].u, fa);
+            if(u!=v) g[c].push_back(make_pair(u,v));
+        }
+        for(int k=1; k<=n; ++k)
+            if(g[k].size())
+                res = res*make_graph(k)%MOD;
+        for(int k=1; k<=n; ++k)
+            unit[k] =fa[k];
+        i=j;
+        if(res==0) break;
+    }
+    int cnt=0;
+    for(int i=1; i<=n; ++i)
+        if(fa[i]==i) ++cnt;
+    if(cnt>1) res = 0;
+    if(res<0) res += MOD;
+    printf("%d\n", res);
+    return 0;
+}
+```
+
+## 最小树形图
+```c++
+//https://vjudge.net/contest/169617#problem/A
+#include<cstdio>
+#include<cstring>
+#include<cmath>
+const int MAXN = 128, MAXM=1e4+1e3;
+const double INF = 1e10 ;
+double p[MAXN][2];
+double in[MAXN];
+int pre[MAXN], id[MAXN], col[MAXN];
+int dbg=0;
+struct Edge{
+    int u, v;
+    double d;
+}e[MAXM];
+int n, m;
+double squ(double x) {
+    return 1.0*x*x;
+}
+void printe() {
+    for(int i=1; i<=m; ++i)
+        if(e[i].u!=e[i].v)
+            printf("%d,%d:%.3f\n",
+                    e[i].u, e[i].v, e[i].d);
+}
+void printin() {
+    for(int i=1; i<=n; ++i) {
+        printf("%.3f ", in[i]);
+    }
+    puts("");
+}
+double ZLA(int root) {
+    double ret=0;
+    while(true) {
+        if(dbg) printe();
+        for(int i=1; i<=n; ++i)
+            in[i] = INF;
+        in[root] = 0;
+        for(int i=1; i<=m; ++i) {
+            int u=e[i].u, v=e[i].v;
+            double d=e[i].d;
+            if(u!=v&&in[v]>d) {
+                pre[v]=u;
+                in[v] = d;
+            }
+        }
+        if(dbg) printin();
+        for(int i=1; i<=n; ++i)
+            if(in[i]==INF)
+                return -1;
+        int cnt=0;
+        memset(col, -1, sizeof(col));
+        memset(id, -1, sizeof(id));
+        for(int i=1; i<=n; ++i)
+        {
+            ret += in[i];
+            int v=i;
+            while(col[v]!=i&&id[v]==-1&&v!=root) {
+                col[v] = i;
+                v=pre[v];
+            }
+            if(v!=root&&id[v]==-1) {
+                for(int j=pre[v]; j!=v; j=pre[j])
+                    id[j] = cnt+1;
+                id[v] = ++cnt;
+            }
+        }
+        if(!cnt) break;
+        for(int i=1; i<=n; ++i)
+            if(id[i]==-1) id[i] = ++cnt;
+        for(int i=1; i<=m; ++i) {
+            int v=e[i].v;
+            e[i].u=id[e[i].u];
+            e[i].v=id[e[i].v];
+            if(e[i].u!=e[i].v) e[i].d-=in[v];
+        }
+        root = id[root];
+        n=cnt;
+    }
+    return ret;
+}
+int main() {
+    while(~scanf("%d%d", &n, &m)) {
+        for(int i=1; i<=n; ++i)
+            scanf("%lf%lf", p[i], p[i]+1);
+        for(int i=1; i<=m; ++i) {
+            int u, v;
+            scanf("%d%d", &u, &v);
+            double d = sqrt(squ(p[u][0]-p[v][0])
+                    +squ(p[u][1]-p[v][1]));
+            e[i] = (Edge){u,v,d};
+        }
+        double res = ZLA(1);
+        if(res<0) puts("poor snoopy");
+        else printf("%.2f\n", res);
+    }
+    return 0;
+}
+```
+
+## 边双连通分量
+```c++
+//POJ3352
+#include<cstdio>
+#include<cstring>
+#include<algorithm>
+#include<vector>
+#include<cmath>
+#define fi first
+#define se second
+using namespace std;
+const int MAXN = 1024;
+struct Edge{
+    int u, v;
+    int pal(int x) {
+        return u+v-x;
+    }
+}e[MAXN];
+int dfs_clk;
+int pre[MAXN], low[MAXN], rk[MAXN];
+int n, r;
+int fa[MAXN], deg[MAXN];
+vector<int> G[MAXN];
+
+int getfa(int x) {
+    if(x==fa[x]) return x;
+    return fa[x]=getfa(fa[x]);
+}
+
+void dfs(int u, int pe) {
+    pre[u]=low[u]=++dfs_clk;
+    rk[dfs_clk] = u;
+    for(int i=0; i<G[u].size(); ++i) {
+        if(G[u][i]==pe) continue;
+        int v=e[G[u][i]].pal(u);
+        if(!pre[v]) {
+            dfs(v, G[u][i]);
+            low[u] = min(low[u], low[v]);
+        }
+        else low[u] = min(low[u], pre[v]);
+    }
+}
+int main() {
+    scanf("%d%d", &n, &r);
+    dfs_clk = 0;
+    memset(pre, 0, sizeof(pre));
+    memset(deg, 0, sizeof(deg));
+    for(int i=1; i<=n; ++i) {
+        G[i].clear();
+        fa[i] = i;
+    }
+    for(int i=0; i<r; ++i) {
+        scanf("%d%d", &e[i].u, &e[i].v);
+        G[e[i].u].push_back(i);
+        G[e[i].v].push_back(i);
+    }
+    dfs(1, -1);
+    for(int i=1; i<=n; ++i) {
+        int u=getfa(rk[low[i]]), v=getfa(i);
+        if(u!=v) fa[u] = v;
+    }
+    for(int i=0; i<r; ++i) {
+        int u=getfa(e[i].u);
+        int v=getfa(e[i].v);
+        if(u==v) continue;
+        ++deg[u], ++deg[v];
+    }
+    int cnt=0;
+    for(int i=1; i<=n; ++i)
+        if(deg[i]==1) ++cnt;
+    printf("%d\n", (cnt+1)/2);
+    return 0;
+}
+```
 ---
 
 # <big>字符串</big>
@@ -2922,6 +3418,232 @@ int main() {
         if(i==j) j+=1;
     }
     print(min(i,j));
+    return 0;
+}
+```
+# 树上路径问题
+## 树链剖分
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+const int MAXN = 7e4;
+typedef pair<int,int> pii;
+struct Edge{
+    int to, next;
+    Edge(int to=0, int next=0)
+        :to(to), next(next){};
+}e[MAXN];
+int head[MAXN], esz;
+int fp[MAXN];
+struct Node{
+    int top, fa, dep;
+    int num, pos, son;
+    int v;
+}node[MAXN];
+int n, pos;
+pii tr[MAXN*15];
+
+pii operator * (const pii& a, const pii& b) {
+    return make_pair(max(a.first, b.first), a.second+b.second);
+}
+
+void init() {
+    for(int i=1; i<=n; ++i)
+        head[i]=node[i].son=-1;
+    pos=1;
+}
+void dfs1(int u, int fa, int d) {
+    node[u].fa=fa;
+    node[u].dep=d;
+    node[u].num=1;
+    for(int p=head[u]; p!=-1; p=e[p].next) {
+        int v=e[p].to;
+        if(v==fa) continue;
+        dfs1(v, u, d+1);
+        node[u].num+=node[v].num;
+        if(node[u].son==-1||
+                node[node[u].son].num<node[v].num)
+            node[u].son=v;
+    }
+}
+void getpos(int u, int sp) {
+    node[u].top=sp;
+    node[u].pos=pos++;
+    fp[node[u].pos]=u;
+    if(node[u].son==-1) return;
+    getpos(node[u].son, sp);
+    for(int p=head[u]; p!=-1; p=e[p].next) {
+        int v=e[p].to;
+        if(v==node[u].son||v==node[u].fa)
+            continue;
+        getpos(v,v);
+    }
+}
+void build(int id, int l, int r) {
+    if(l==r) {
+        tr[id] = make_pair(node[fp[l]].v, node[fp[l]].v);
+        return;
+    }
+    int mid=(l+r)/2;
+    build(id<<1, l, mid);
+    build(id<<1|1, mid+1, r);
+    tr[id] = tr[id<<1]*tr[id<<1|1];
+}
+void update(int id, int l, int r, int pos, int v) {
+    if(l==r) {
+        tr[id] = make_pair(v,v);
+        return;
+    }
+    int mid=(l+r)/2;
+    if(pos<=mid) update(id<<1, l, mid, pos, v);
+    else update(id<<1|1, mid+1, r, pos, v);
+    tr[id] = tr[id<<1]*tr[id<<1|1];
+}
+pii query(int id, int l, int r, int al, int ar) {
+    if(al<=l&&r<=ar) return tr[id];
+    pii ret=make_pair(-0x3f3f3f3f,0);
+    int mid=(l+r)/2;
+    if(al<=mid&&ar>=l) ret = ret*query(id<<1, l, mid, al, ar);
+    if(al<=r&&ar>mid) ret=ret*query(id<<1|1, mid+1, r, al, ar);
+    return ret;
+}
+pii findans(int u, int v) {
+    int f1=node[u].top, f2=node[v].top;
+    pii ret=make_pair(-0x3f3f3f3f,0), tmp;
+    while(f1!=f2) {
+        if(node[f1].dep<node[f2].dep) {
+            swap(f1, f2);
+            swap(u, v);
+        }
+        ret = ret*query(1,1,n,node[f1].pos,node[u].pos);
+        u=node[f1].fa;
+        f1=node[u].top;
+    }
+    if(node[u].dep>node[v].dep) swap(u,v);
+    ret = ret*query(1,1,n,node[u].pos, node[v].pos);
+    return ret;
+}
+int main() {
+    scanf("%d", &n);
+    init();
+    for(int i=0; i<n-1; ++i) {
+        int u, v;
+        scanf("%d%d", &u, &v);
+        e[i<<1]=Edge(v, head[u]);
+        head[u] = i<<1;
+        e[i<<1|1]=Edge(u, head[v]);
+        head[v] = i<<1|1;
+    }
+    for(int i=1; i<=n; ++i)
+        scanf("%d", &node[i].v);
+    dfs1(1,0,0);
+    getpos(1,1);
+    build(1,1,n);
+    int q; scanf("%d", &q);
+    while(q--) {
+        char op[12];
+        int u, v;
+        scanf("%s%d%d", op, &u, &v);
+        if(op[1]=='H')  {
+            node[u].v=v;
+            update(1,1,n, node[u].pos, v);
+        }
+        else {
+            pair<int,int> ans=findans(u,v);
+            if(op[1]=='M') printf("%d\n", ans.first);
+            else printf("%d\n", ans.second);
+        }
+    }
+    return 0;
+}
+```
+
+## 点分治
+```c++
+#include <bits/stdc++.h>
+using namespace std;
+const int MAXN = 1e4+1e3;
+struct Edge{
+    int to, l;
+    Edge* next;
+    Edge() {}
+    Edge(int to, int l, Edge* next)
+        :to(to), l(l), next(next){}
+}e[MAXN*2], *head[MAXN];
+vector<int> dep;
+int n, k, size;
+int sz[MAXN], f[MAXN], root;
+bool done[MAXN];
+
+void init() {
+    memset(done, false, sizeof(done));
+    memset(head, 0, sizeof(head));
+    f[0] = n+1;
+}
+void getroot(int u, int fa) {
+    sz[u]=1, f[u]=0;
+    for(Edge* p=head[u]; p; p=p->next) {
+        int v=p->to;
+        if(done[v]||v==fa) continue;
+        getroot(v, u);
+        sz[u] += sz[v];
+        f[u] = max(f[u], sz[v]);
+    }
+    f[u] = max(f[u], size-sz[u]);
+    if(f[u]<f[root]) root=u;
+}
+void getdep(int u, int fa, int d) {
+    dep.push_back(d);
+    sz[u]=1;
+    for(Edge* p=head[u]; p; p=p->next) {
+        int v=p->to;
+        if(done[v]||v==fa) continue;
+        getdep(v, u, d+p->l);
+        sz[u]+=sz[v];
+    }
+}
+int cal(int node, int rh) {
+    if(k<2*rh) return 0;
+    dep.clear();
+    getdep(node, -1, rh);
+    sort(dep.begin(), dep.end());
+    int r=dep.size()-1, l=0, ret=0;
+    while(l<r) {
+        if(dep[l]+dep[r]>k) --r;
+        else ret += r-l++;
+    }
+    return ret;
+}
+int work(int node, int n) {
+    int ret=0;
+    size = n;
+    root=0;
+    getroot(node, -1);
+    node=root;
+
+    ret = cal(node, 0);
+    done[node] = true;
+    for(Edge* p=head[node]; p; p=p->next) {
+        if(done[p->to]) continue;
+        ret -= cal(p->to, p->l);
+        ret += work(p->to, sz[p->to]);
+    }
+    return ret;
+}
+int main() {
+    while(~scanf("%d%d", &n, &k)) {
+        if(!n&&!k) break;
+        init();
+        for(int i=0; i<n-1; ++i) {
+            int u, v, l;
+            scanf("%d%d%d", &u, &v, &l);
+            e[i<<1] = Edge(v,l,head[u]);
+            head[u] = e+i*2;
+            e[i<<1|1] = Edge(u,l,head[v]);
+            head[v] = e+i*2+1;
+        }
+        printf("%d\n", work(1,n));
+    }
     return 0;
 }
 ```

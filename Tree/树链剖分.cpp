@@ -1,8 +1,4 @@
-#include<cstdio>
-#include<cstring>
-#include<algorithm>
-#include<vector>
-#include<cmath>
+#include<bits/stdc++.h>
 using namespace std;
 const int MAXN = 7e4;
 typedef pair<int,int> pii;
@@ -70,7 +66,7 @@ void build(int id, int l, int r) {
 void update(int id, int l, int r, int pos, int v) {
     if(l==r) {
         tr[id] = make_pair(v,v);
-        return; 
+        return;
     }
     int mid=(l+r)/2;
     if(pos<=mid) update(id<<1, l, mid, pos, v);
