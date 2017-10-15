@@ -16,7 +16,6 @@
     - Lucas定理
 1. 区间问题
     - 莫队算法
-    - ST表
     - fzu2224
     - Treap
     - 树上莫队cot2
@@ -32,27 +31,7 @@
     - LCP
     - 后缀自动机
     - 最小表示法
-    -  离散对数
-    -   欧拉函数
-    -   素数测试
-    -   素数个数
-    -   扩展欧几里得
-    -   Lucas定理
-1. 区间问题
-    -   莫队算法
-    -   ST表
-    -   fzu2224
-    -   Treap
-    -   树上莫队cot2
-1. 数学
-	-   FFT
-	-   高精度
-1. 图论
-    - LCA tarjian
-1. 字符串
-    -   后缀数组
-    -   最长回文子串
-    -   ShiftOr
+
 
 * * *
 
@@ -596,32 +575,6 @@ int main() {
     }
     for(int i=0; i<t; ++i)
         printf("%I64d\n", ans[i]);
-    return 0;
-}
-```
-##ST表
-```c++
-#include<cstdio>
-#include<iostream>
-using namespace std;
-const int MAXN = 200000;
-const int MAXL = 20;
-int st[MAXN][MAXL];
-int n, m, l, r, len;
-int main() {
-    int i, j, k;
-    scanf("%d%d", &n, &m);
-    for(i = 1; i < n+1; ++i)
-        scanf("%d", &st[i][0]);
-    for(j = 1; 1<<j <= n; ++j)
-        for(i = 1; i+(1<<j) < n+2; ++i)
-            st[i][j] = min(st[i][j-1],st[i+(1<<(j-1))][j-1]);
-    for(i = 0; i < m; ++i) {
-        scanf("%d%d", &l, &r);
-        len = r-l+1, k = 0;
-        while((1<<(k+1)) < len) ++k;
-        printf("%d ", min(st[l][k],st[r+1-(1<<k)][k]));
-    }
     return 0;
 }
 ```
@@ -1340,7 +1293,7 @@ void solve(char *s) {
 }
 ```
 ##ShiftOr
-```
+```c++
 #include<cstdio>
 #include<cstring>
 #include<bitset>
@@ -1370,7 +1323,7 @@ int main() {
 }
 ```
 ##LCP
-```
+```c++
 #include<cstdio>
 #include<cstring>
 typedef unsigned long long uint;
@@ -1419,7 +1372,7 @@ int main() {
 
 
 ##SAM
-```
+```c++
 const int MAXN = 2e5+1e3;
 struct state {
     int len, pre, ch[26];
@@ -1515,7 +1468,7 @@ int main() {
 ```
 
 ## 最小表示法
-```
+```c++
 #include<cstdio>
 #include<cstring>
 const int MAXN = 2048;
