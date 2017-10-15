@@ -1,6 +1,4 @@
-#include<cstdio>
-#include<cstring>
-#include<algorithm>
+#include<bits/stdc++.h>
 #define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
 #define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
 #define sf scanf

@@ -40,6 +40,7 @@
     - 生成树计数
     - 最小生成树计数
     - 边双连通分量
+    - KM匹配
 1. 字符串
     - 后缀数组
     - 最长回文子串
@@ -50,6 +51,10 @@
 1. 树上路径问题
     - 树链剖分
     - 点分治
+1. 杂项
+    - 前K大
+    - 模拟退火
+    - CDQ分治
 
 * * *
 
@@ -3121,6 +3126,73 @@ int main() {
 }
 ```
 ---
+## KM匹配
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+const int MAXN=304;
+int slack[MAXN], link[MAXN];
+int lx[MAXN], ly[MAXN];
+int a[MAXN][MAXN], n;
+bool S[MAXN], T[MAXN];
+bool dfs(int x) {
+    S[x]=true;
+    for(int y=0; y<n; ++y) {
+        if(T[y]) continue;
+        int tmp = lx[x]+ly[y]-a[x][y];
+        if(tmp==0) {
+            T[y] = true;
+            if(link[y]==-1||dfs(link[y])) {
+                link[y] = x;
+                return true;
+            }
+        }
+        else if(slack[y]>tmp)
+            slack[y] = tmp;
+    }
+    return false;
+}
+void KM() {
+    memset(lx, 0, sizeof(lx));
+    memset(ly, 0, sizeof(ly));
+    memset(link, -1, sizeof(link));
+    for(int x=0; x<n; ++x)
+        for(int y=0; y<n; ++y)
+            lx[x] = max(lx[x], a[x][y]);
+    for(int x=0; x<n; ++x) {
+        memset(slack, 0x3f, sizeof(slack));
+        while(true) {
+            memset(S, false, sizeof(S));
+            memset(T, false, sizeof(T));
+            if(dfs(x)) break;
+            int d=0x3f3f3f3f;
+            for(int y=0; y<n; ++y) if(!T[y])
+                    d = min(d, slack[y]);
+            for(int i=0; i<n; ++i) if(S[i])
+                    lx[i] -= d;
+            for(int y=0; y<n; ++y) {
+                if(T[y]) ly[y] += d;
+                else slack[y] -= d;
+            }
+
+        }
+    }
+}
+int main() {
+    while(~scanf("%d", &n)) {
+        for(int i=0; i<n; ++i)
+            for(int j=0; j<n; ++j)
+                scanf("%d", a[i]+j);
+        KM();
+        int ans=0;
+        for(int i=0; i<n; ++i)
+            ans += lx[i]+ly[i];
+        printf("%d\n", ans);
+    }
+    return 0;
+}
+```
+---
 
 # <big>字符串</big>
 ## 后缀数组
@@ -3644,6 +3716,205 @@ int main() {
         }
         printf("%d\n", work(1,n));
     }
+    return 0;
+}
+```
+
+---
+# 杂项
+## 前K大
+```c++
+struct Opt{
+    int w, x, y;
+    Opt(int ww=0, int xx=0, int yy=0)
+        :w(ww), x(xx), y(yy){}
+    bool operator <(const Opt& b) const {
+        if(w!=b.w) return w<b.w;
+        if(x!=b.x) return x<b.x;
+        if(y!=b.y) return y<b.y;
+        return false;
+    }
+};
+void myMerge(vector<int>& V, vector<int>& b) {
+    priority_queue<Opt> pq;
+    for(int i=0; i<b.size(); ++i)
+        pq.push(Opt(V[0]+b[i], i, 0));
+    W.clear();
+    while(W.size()<K&&!pq.empty()) {
+        auto e=pq.top();
+        pq.pop();
+        W.push_back(e.w);
+        if(e.y+1<V.size())
+            pq.push(Opt(V[e.y+1]+b[e.x],e.x,e.y+1));
+    }
+    V = W;
+}
+```
+
+## 模拟退火
+
+```c++
+//POJ 1379 run away
+#include<cstdio>
+#include<cmath>
+#include<ctime>
+#include<cstdlib>
+#include<cstring>
+#include<algorithm>
+#define fi first
+#define se second
+using namespace std;
+const int MAXN=1024;
+const int MAXP=10;
+const double eps = 1e-4;
+const double pi = acos(-1.0);
+int X, Y, M;
+pair<int,int> p[MAXN];
+struct Ans{
+    double x, y, dist;
+}ans[MAXP];
+
+double sqr(double x) {
+    return x*x;
+}
+double mindis(double x, double y) {
+    double ret=1e10;
+    for(int i=0; i<M; ++i)
+        ret = min(ret, sqr(p[i].fi-x)+sqr(p[i].se-y));
+    return ret;
+}
+double myrand() {
+    return (rand()+1.0)/RAND_MAX;
+}
+void anneal() {
+    double d=max(X,Y)/sqrt(1.0*M), r=0.98;
+    for(int i=0; i<MAXP; ++i) {
+        ans[i].x = myrand()*X;
+        ans[i].y = myrand()*Y;
+        ans[i].dist = mindis(ans[i].x, ans[i].y);
+    }
+    while(d>eps) {
+        for(int i=0; i<MAXP; ++i) {
+            for(int j=0; j<12; ++j) {
+                double theta = j*pi/6;
+                double nx=ans[i].x+d*cos(theta);
+                double ny=ans[i].y+d*sin(theta);
+                if(nx>=0&&nx<=X&&ny>=0&&ny<=Y) {
+                double dE = mindis(nx,ny)-ans[i].dist;
+                if(dE>=0||myrand()<exp(dE/d))
+                    ans[i] = (Ans){nx,ny,dE+ans[i].dist};
+                }
+            }
+        }
+        d*=r;
+    }
+    int sel=0;
+    for(int i=1; i<MAXP; ++i)
+        if(ans[i].dist>ans[sel].dist)
+            sel = i;
+    printf("The safest point is (%.1f, %.1f).\n", ans[sel].x, ans[sel].y);
+}
+int main() {
+    srand(time(NULL));
+    int t;
+    scanf("%d", &t);
+    while(t--) {
+        scanf("%d%d%d", &X, &Y, &M);
+        for(int i=0; i<M; ++i)
+            scanf("%d%d", &p[i].fi, &p[i].se);
+        anneal();
+    }
+    return 0;
+}
+```
+
+---
+
+## CDQ分治
+```c++
+#include<bits/stdc++.h>
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define sf scanf
+#define pf printf
+typedef long long ll;
+using namespace std;
+const int MAXN = 1e5+1e3;
+struct Act{
+    int t, pos, v;
+}act[MAXN];
+int n, m, bit[MAXN], sz;
+int a[MAXN], id[MAXN];
+ll f[MAXN], ans[MAXN];
+bool used[MAXN];
+void add(int x, int v) {
+    while(x<n+1) {
+        bit[x] += v;
+        x += x&(-x);
+    }
+}
+int sum(int x) {
+    int ret=0;
+    while(x) {
+        ret += bit[x];
+        x -= x&(-x);
+    }
+    return ret;
+}
+
+bool cmp(const Act& a,const Act& b) {
+    return a.pos<b.pos;
+}
+void cdq(int l, int r) {
+    if(l==r) return;
+    int mid=(l+r)/2;
+    cdq(l,mid);cdq(mid+1,r);
+    sort(act+l, act+r+1, cmp);
+    sz=0;
+    rep(i,l,r+1) {
+        if(act[i].t<=mid) {
+            add(act[i].v, 1);
+            ++sz;
+        }
+        else f[act[i].t] += sz-sum(act[i].v);
+    }
+    rep(i,l,r+1)
+        if(act[i].t<=mid)
+            add(act[i].v, -1);
+
+    drep(i, r, l-1) {
+        if(act[i].t<=mid) {
+            add(act[i].v, 1);
+            ++sz;
+        }
+        else f[act[i].t] += sum(act[i].v);
+    }
+    rep(i,l,r+1)
+        if(act[i].t<=mid)
+            add(act[i].v, -1);
+}
+int main() {
+    sf("%d%d", &n, &m);
+    rep(i,1,n+1) {
+        sf("%d", a+i);
+        id[a[i]] = i;
+    }
+    int k=n;
+    rep(i,1,m+1) {
+        int v; sf("%d", &v);
+        act[k]=(Act){k, id[v], v};
+        used[id[v]] = true;
+        --k;
+    }
+    rep(i,1,n+1) if(!used[i]) {
+        act[k]=(Act){k, i, a[i]};
+        --k;
+    }
+    cdq(1,n);
+    rep(i,1,n+1)
+        ans[i] = ans[i-1]+f[i];
+    drep(i,n,n-m)
+        pf("%lld\n", ans[i]);
     return 0;
 }
 ```

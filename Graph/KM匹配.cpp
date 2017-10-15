@@ -1,6 +1,4 @@
-#include<cstdio>
-#include<cstring>
-#include<algorithm>
+#include <bits/stdc++.h>
 using namespace std;
 const int MAXN=304;
 int slack[MAXN], link[MAXN];
