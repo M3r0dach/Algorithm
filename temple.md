@@ -9,7 +9,6 @@
     - 旋转卡壳法
     - 矩形面积求并
 1. 数论
-<<<<<<< HEAD
     - 离散对数
     - 欧拉函数
     - 素数测试
@@ -33,7 +32,6 @@
     - LCP
     - 后缀自动机
     - 最小表示法
-=======
     -  离散对数
     -   欧拉函数
     -   素数测试
@@ -55,7 +53,6 @@
     -   后缀数组
     -   最长回文子串
     -   ShiftOr
->>>>>>> 9c1ee62927a23d90011e47e7feceef2e5b9d68be
 
 * * *
 
@@ -526,22 +523,7 @@ void init() {
             else dp[n][m] = dp[n-1][m]-dp[n-1][m/prime[n-1]];
 }
 ```
-<<<<<<< HEAD
 
-=======
-##扩展欧几里得
-```c++
-void Ex_Gcd(int a, int b, int& x, int& y, int& d) {
-    if(b==0) {
-        d = a; x = 1; y = 0;
-    } else {
-        Ex_Gcd(b, a%b, x, y, d);
-        x -= a/b*y;
-        swap(x,y);
-    }
-}
-```
->>>>>>> 9c1ee62927a23d90011e47e7feceef2e5b9d68be
 ##Lucas定理
 ```c++
 ll C(ll x, ll y) {
@@ -1434,6 +1416,7 @@ int main() {
 	return 0;
 }
 ```
+
 
 ##SAM
 ```
