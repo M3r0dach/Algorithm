@@ -17,11 +17,16 @@
     - 素数测试
     - 素数个数
     - Lucas定理
+    - 平方剩余
 1. 区间问题
     - 莫队算法
     - fzu2224
     - Treap
     - 树上莫队cot2
+    - Splay
+    - HJTree
+    - huafen
+    - TreeinTee
 1. 数学
 	- FFT
 	- 高精度
@@ -930,6 +935,80 @@ ll C(ll x, ll y) {
 
 ---
 
+## 平方剩余
+
+```c++
+#include <bits/stdc++.h>//don't use this in poj, fzu, zoj
+using namespace std;
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+#define dbg(x) std::cout << #x"=" << x <<'\n';;
+typedef long long ll;
+const int MAXN = 1e5+1e3;
+struct Node{
+    static ll p, omega;
+    ll a, b;
+    Node(ll aa, ll bb) {
+        a=aa%p, b=bb%p;
+    }
+    Node operator *(const Node& rhs) {
+        return Node(a*rhs.a%p+b*rhs.b%p*omega%p, a*rhs.b%p+b*rhs.a%p);
+    }
+};
+ll Node::p, Node:: omega;
+ll pow_mod(ll a, ll x, ll p) {
+    ll ret=1;
+    while (x) {
+        if(x&1) ret=ret*a%p;
+        a=a*a%p;
+        x>>=1;
+    }
+    if(ret<0) ret+=p;
+    return ret;
+}
+Node pow_mod(Node a, ll x) {
+    Node ret(1,0);
+    while(x) {
+        if(x&1) ret = ret*a;
+        a=a*a;
+        x>>=1;
+    }
+    return ret;
+}
+int lgd(ll a, ll p) {
+    if(pow_mod(a, (p-1)>>1, p)==1)
+        return 1;
+    return -1;
+}
+ll modsqrt(ll a,ll p){
+    a%=p;
+    if(p==2||a==0) return a%p;
+    if(lgd(a, p)==-1) return -1;
+    ll x;
+    //if(p%4==3) x=pow_mod(a,(p+1)>>2,p);
+    //else{
+        ll a_0;
+        for(a_0=1; a_0<p; ++a_0) {
+            if(lgd(a_0*a_0-a, p)==-1)
+                break;
+        }
+        Node::p=p;
+        Node::omega=(a_0*a_0-a)%p;
+        Node tmp=Node(a_0, 1);
+        tmp = pow_mod(tmp, (p+1)>>1);
+        x=tmp.a;
+        dbg(tmp.b);
+    //}
+    if(x<0) x+=p;
+    if(x*2>p) x=p-x;
+    return x;
+}
+```
+---
+
 #区间问题
 ##莫队算法
 ```c++
@@ -1320,6 +1399,453 @@ int main() {
 	return 0;
 }
 ```
+## Splay
+```c++
+#include<bits/stdc++.h>
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define sf scanf
+#define pf printf
+#define lch(x) ch[x][0]
+#define rch(x) ch[x][1]
+typedef long long ll;
+using namespace std;
+int n, m;
+const int MAXN = 1e5+1e3;
+    int f[MAXN], ch[MAXN][2], key[MAXN];
+    int cnt[MAXN], size[MAXN], sz, root;
+    int flip[MAXN];
+    void clear(int x) {
+        lch(x)=rch(x)=f[x]=cnt[x]=key[x]=size[x]=0;
+        flip[x]=0;//
+    }
+    int newnode(int v, int fa) {
+        ++sz;
+        lch(sz)=rch(sz)=0;
+        cnt[sz]=size[sz]=1;
+        key[sz]=v, f[sz]=fa;
+        flip[sz]=0;//
+        return sz;
+    }
+    void push_down(int o) {
+        if(flip[o]) {
+            flip[o]=0;
+            swap(lch(o), rch(o));
+            if(lch(o)) flip[lch(o)]^=1;
+            if(rch(o)) flip[rch(o)]^=1;
+        }
+    }
+    void travel(int o) {
+        push_down(o);
+        if(lch(o)) travel(lch(o));
+        printf("%d\n", key[o]);
+        if(rch(o)) travel(rch(o));
+    }
+    int get(int x) {
+        return ch[f[x]][1]==x;//0为左儿子，1为右儿子
+    }
+    void update(int x) {
+        if(x) {
+            size[x]=cnt[x];
+            if(lch(x)) size[x]+=size[lch(x)];//默认x==0代表x是空节点
+            if(rch(x)) size[x]+=size[rch(x)];
+        }
+    }
+    void rotate(int x) {//如果他是左儿子则右旋，否则反之
+        int old=f[x], oldf=f[old], which=get(x);
+        ch[old][which] = ch[x][1^which];
+        if(ch[old][which]) f[ch[old][which]] = old;
+        ch[x][1^which]=old;
+        f[old]=x;
+        f[x]=oldf;
+        if(oldf) ch[oldf][ch[oldf][1]==old]=x;
+        update(old);// update 的顺序不要搞错了
+        update(x);
+        if(old==root) root=x;
+    }
+    void splay(int x, int anc) {
+        for(int fa; (fa=f[x])!=anc; rotate(x))
+            if(f[fa]!=anc)
+                rotate(get(fa)==get(x)?fa:x);
+    }
+    void insert(int v) {
+        if(root==0) {
+            root = newnode(v,0);
+            return;
+        }
+        int now=root;
+        while(key[now]!=v&&ch[now][key[now]<v])
+            now = ch[now][key[now]<v];
+        if(key[now]==v) {
+            ++cnt[now];
+            ++size[now];
+            splay(now,0);
+        }
+        else {
+            int u= newnode(v,now);
+            ch[now][key[now]<v]=u;
+            update(now);
+            splay(u,0);
+        }
+    }
+    int pre(int o) {
+        int now=lch(o);
+        while(rch(now)) now=rch(now);
+        return now;
+    }
+    int next(int o) {
+        int now=rch(o);
+        while(lch(now)) now=lch(now);
+        return now;
+    }
+    void delnode(int o) {
+        splay(o, 0);
+        if(cnt[root]>1) {
+            --cnt[root], --size[root];
+            return;
+        }
+        if(!lch(root)&&!rch(root)) {
+            clear(root);
+            root=0;
+            return;
+        }
+        if(!lch(root)) {
+            root=rch(root);
+            clear(f[root]);
+            f[root]=0;
+        }
+        else if(!rch(root)) {
+            root=lch(root);
+            clear(f[root]);
+            f[root]=0;
+        }
+        else {
+            int leftbig=pre(root), oldroot=root;
+            splay(leftbig, 0);
+            ch[root][1]=ch[oldroot][1];
+            f[ch[oldroot][1]] = root;
+            clear(oldroot);
+            update(root);
+        }
+    }
+    int Kth(int k, int& o) {
+        int now=o;
+        while(k) {
+            push_down(now);
+            if(size[lch(now)]>=k)
+                now=lch(now);
+            else {
+                k-=size[lch(now)];
+                if(k<=cnt[now]) {
+                    k=0;
+                    break;
+                }
+                k-=cnt[now];
+                now=rch(now);
+            }
+        }
+        splay(now, f[o]);
+        o=now;
+        return now;
+    }
+    void split(int& o, int& r, int k) {
+        if(!k) {
+            r=o;
+            o=0;
+            return;
+        }
+        Kth(k,o);
+        r=rch(o);
+        f[r]=0;
+        rch(o)=0;
+    }
+    void PT(int a, int b) {
+        int l, m, r;
+        l=root;
+        split(l, m, a-1);
+        split(m, r, b-a+1);
+        if(l==0) l=r;
+        else {
+            rch(l)=r;
+            f[r]=l;
+            update(l);
+        }
+        rch(m)=lch(m);
+        lch(m)=l;
+        if(l) f[l]=m;
+        if(rch(m)) flip[rch(m)]^=1;
+        update(m);
+        root = m;
+    }
+int main() {
+    int m;
+    sf("%d%d", &n, &m);
+    rep(i, 1, n+1)
+        insert(i);
+    while(m--) {
+        int a, b;
+        sf("%d%d", &a, &b);
+        PT(a,b);
+    }
+    travel(root);
+
+    return 0;
+}
+
+```
+
+***
+
+##HJTree
+```c++
+// HDU 2665
+#include<cstdio>
+#include<cstring>
+#include<algorithm>
+using namespace std;
+const int MAXN = 1e5+10;
+const int MAXM = MAXN*20;
+struct Node {
+    int ch[2], cnt;
+}tr[MAXM];
+int a[MAXN],b[MAXN], tot, rt[MAXN];
+void update(int p, int& o, int v, int l, int r) {
+    tr[o=++tot] = tr[p];
+    ++tr[o].cnt;
+    if(l < r) {
+        int m = (l+r)>>1;
+        if(v>m) {
+            tr[o].ch[0] = tr[p].ch[0];
+            update(tr[p].ch[1], tr[o].ch[1], v, m+1, r);
+        } else {
+            tr[o].ch[1] = tr[p].ch[1];
+            update(tr[p].ch[0], tr[o].ch[0], v, l, m);
+        }
+    }
+}
+int ask(int p, int o, int k, int l, int r) {
+    if(l==r) return l;
+    else {
+        int lsz = tr[tr[o].ch[0]].cnt-tr[tr[p].ch[0]].cnt;
+        int m = (l+r)>>1;
+        if(k>lsz) return ask(tr[p].ch[1], tr[o].ch[1], k-lsz,m+1, r);
+        else return ask(tr[p].ch[0], tr[o].ch[0], k, l, m);
+    }
+}
+int main() {
+    int T; scanf("%d", &T);
+    while(T--) {
+        int n, m, sz;
+        scanf("%d%d", &n, &m);
+        for(int i=1; i<=n; ++i) {
+            scanf("%d", a+i);
+            b[i] = a[i];
+        }
+        sort(b+1, b+n+1);
+        sz = unique(b+1, b+n+1)-b-1;
+        for(int i=1; i<=n; ++i)
+            a[i] = lower_bound(b+1, b+sz+1, a[i])-b;
+        tot = 0;
+        for(int i=1; i<=n; ++i)
+            update(rt[i-1], rt[i], a[i], 1, sz);
+        while(m--) {
+            int l, r, k;
+            scanf("%d%d%d", &l, &r, &k);
+            printf("%d\n", b[ask(rt[l-1], rt[r], k, 1, sz)]);
+        }
+    }
+    return 0;
+}
+```
+***
+
+##划分树
+```c++
+#include<stdio.h>
+#include<algorithm>
+using namespace std;
+#define N 100100
+#define rep(a,b,c) for(int a=b; a<c; ++a)
+int data[N];
+
+struct node
+{
+    int v[N];
+    int num[N];
+} td[31];
+void build(int l,int r,int dep)
+{
+    if(l>=r)return;
+    int i,mid=(l+r)>>1,midd=data[mid],ant=mid-l+1;
+    // ant保存有多少和sorted[mid]一样大的数进入左孩子
+    int ln=l-1,rn=mid;
+    for(i=l; i<=r; i++)
+        if(td[dep].v[i]<midd)
+            ant--;
+    for(i=l; i<=r; i++)
+    {
+        if(i==l)
+            td[dep].num[i]=0;
+        else
+            td[dep].num[i]=td[dep].num[i-1];
+        if(td[dep].v[i]<midd||(td[dep].v[i]==midd&&ant))
+        {
+            if(td[dep].v[i]==midd)--ant;
+            td[dep+1].v[++ln]=td[dep].v[i];
+            ++td[dep].num[i];
+        }
+        else td[dep+1].v[++rn]=td[dep].v[i];
+    }
+    build(l,mid,dep+1);
+    build(mid+1,r,dep+1);
+}
+int query(int a,int b,int k,int l,int r,int dep)
+{
+    int mid=(l+r)>>1;
+    if(a==b)return td[dep].v[a];
+    int lx,rx=td[dep].num[b],sub,sl,sr;
+    lx=(a<=l)?0:td[dep].num[a-1];
+    sub=rx-lx;
+    if(sub>=k)
+        return query(l+lx,l+rx-1,k,l,mid,dep+1);
+    else
+    {
+        sl=a-l-lx;
+        sr=b-l-rx;
+        return query(mid+1+sl,mid+1+sr,k-sub,mid+1,r,dep+1);
+    }
+}
+int n;
+void dbg() {
+    rep(i, 0, 6) {
+        printf("%d\n", i);
+        rep(j, 1, n+1)
+            printf("%d%c", td[i].num[j], j==n?'\n':' ');
+    }
+    rep(i, 0, 6) {
+        printf("%d\n", i);
+        rep(j, 1, n+1)
+            printf("%d%c", td[i].v[j], j==n?'\n':' ');
+    }
+}
+int main()
+{
+    int i,cas=1,m,l,r,k;
+  //  scanf("%d",&cas);
+    while(cas--)
+    {
+        scanf("%d%d",&n,&m);
+        for(i=1; i<=n; i++)
+        {
+            scanf("%d",&td[1].v[i]);
+            data[i]=td[1].v[i];
+        }
+        sort(data+1,data+n+1);
+        build(1,n,1);
+        dbg();
+        m=0;
+        while(m--)
+        {
+            scanf("%d%d%d",&l,&r,&k);
+            printf("%d\n",query(l,r,k,1,n,1));
+        }
+    }
+    return 0;
+}
+```
+***
+##TreeinTree
+```c++
+//HYSBZ - 3295
+//树套树的空间一般很大，由于树状数组的结点大小一般较小，可以使用动态线段树，当然也可以使用平衡树
+#include<cstdio>
+#include<cstring>
+#include<bitset>
+using namespace std;
+const int MAXN = 1e5+1e3;
+const int MAXM = 9e6;
+struct Node{
+    int sz, ch[2];
+}tr[MAXM];
+struct Act{
+    int pos, v;
+    long long ans;
+}act[MAXN];
+int rt[MAXN], n, m, sz;
+int a[MAXN], id[MAXN];
+bitset<MAXN> isdel;
+void Add(int& o, int l, int r, int v) {
+    if(!o) o=++sz;
+    ++tr[o].sz;
+    if(l<r) {
+        int m=(l+r)/2;
+        if(v<=m) Add(tr[o].ch[0], l, m, v);
+        else Add(tr[o].ch[1], m+1, r, v);
+    }
+}
+void Add(int pos, int v) {
+    while(pos<=n) {
+        Add(rt[pos], 1, n, v);
+        pos += pos&(-pos);
+    }
+}
+int Ask(int o, int l, int r, int v) {
+    if(!tr[o].sz) return 0;
+    if(r<=v) return tr[o].sz;
+    if(l>v) return 0;
+    int m = (l+r)/2;
+    int ret=0;
+    if(m<=v) ret = tr[tr[o].ch[0]].sz+Ask(tr[o].ch[1], m+1, r, v);
+    else ret = Ask(tr[o].ch[0], l, m, v);
+    return ret;
+}
+int Ask(int pos, int v) {
+    int ret=0;
+    while(pos) {
+        ret += Ask(rt[pos], 1, n, v);
+        pos -= pos&(-pos);
+    }
+    return ret;
+}
+int Asksz(int pos) {
+    int ret=0;
+    while(pos) {
+        ret += tr[rt[pos]].sz;
+        pos -= pos&(-pos);
+    }
+    return ret;
+}
+int main() {
+    scanf("%d%d", &n, &m);
+    for(int i=1; i<=n; ++i) {
+        scanf("%d", a+i);
+        id[a[i]] = i;
+    }
+    long long res = 0;
+    for(int i=1; i<=m; ++i) {
+        int x; scanf("%d", &x);
+        act[i] = (Act){id[x], x,0ll};
+        isdel[id[x]] = true;
+    }
+    for(int i=n; i; --i)
+        if(!isdel[i]) {
+            res += Ask(n, a[i]);
+            Add(i, a[i]);
+        }
+    for(int i=m; i; --i) {
+        int pos = act[i].pos, v = act[i].v;
+        res += Ask(n, v)+Asksz(pos)-2*Ask(pos, v);
+        act[i].ans = res;
+        Add(pos, v);
+    }
+    for(int i=1; i<=m; ++i)
+        printf("%lld\n", act[i].ans);
+    return 0;
+}
+```
+
+***
+
 #数学
 ##FFT
 ```c++
