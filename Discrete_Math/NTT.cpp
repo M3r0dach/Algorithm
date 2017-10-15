@@ -1,7 +1,4 @@
-#include<cstdio>
-#include<cstring>
-#include<algorithm>
-#include<vector>
+#include <bits/stdc++.h>
 #define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
 #define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
 #define CLR(x) memset(x, 0, sizeof(x))

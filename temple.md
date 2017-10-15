@@ -27,8 +27,12 @@
     - HJTree
     - huafen
     - TreeinTee
-1. 数学
+1. 离散数学
 	- FFT
+    - NTT
+    - FWT
+    - 拆系数FFT
+    - 线性递推
 	- 高精度
 1. 图论
     - LCA tarjian
@@ -43,8 +47,8 @@
 
 * * *
 
-#DP
-##斜率优化的DP
+# DP
+## 斜率优化的DP
 
 ```c++
 #include<cstdio>
@@ -174,7 +178,7 @@ int main() {
 ```
 ***
 
-##数位DP
+## 数位DP
 
 ```c++
 //CF 55D
@@ -246,7 +250,7 @@ int main() {
 ```
 ***
 
-##大背包
+## 大背包
 ```c++
 #include<cstdio>
 #include<algorithm>
@@ -288,8 +292,8 @@ int main() {
 
 * * *
 
-#计算几何
-##凸包
+# 计算几何
+## 凸包
 ```c++
 #include<cstdio>
 #include<cmath>
@@ -338,7 +342,7 @@ int main() {
 
 * * *
 
-##动态凸包
+## 动态凸包
 ```c++
 #include<cstdio>
 #include<map>
@@ -426,7 +430,7 @@ struct Convex{
 
 * * *
 
-##旋转卡壳法
+## 旋转卡壳法
 ```c++
 int rotating_calipers(Point *ch,int n)
 {
@@ -441,7 +445,7 @@ int rotating_calipers(Point *ch,int n)
     return ans;
 }
 ```
-##矩形面积求并
+## 矩形面积求并
 ```c++
 #include <iostream>
 #include <algorithm>
@@ -536,7 +540,7 @@ int rotating_calipers(Point *ch,int n)
 
 ***
 
-##Geo模板
+## Geo模板
 
 ```c++
 #include <iostream>
@@ -790,8 +794,8 @@ int HPI(Line line[],int n,Point ans[])
 
 * * *
 
-#数论
-##离散对数
+# 数论
+## 离散对数
 ```c++
 int log_mod(int a, int b, int n) {
     int s, v, e;
@@ -810,7 +814,7 @@ int log_mod(int a, int b, int n) {
     return -1;
 }
 ```
-##欧拉函数
+## 欧拉函数
 ```c++
 int phi(int n) {
     int m = (int)sqrt(n+0.5);
@@ -823,7 +827,7 @@ int phi(int n) {
     return ans;
 }
 ```
-##素数测试
+## 素数测试
 ```c++
 #include<cstdio>
 #include<cstdlib>
@@ -869,7 +873,7 @@ bool primetest(ll n) {
     return true;
 }
 ```
-##素数个数
+## 素数个数
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -922,7 +926,7 @@ void init() {
 }
 ```
 
-##Lucas定理
+## Lucas定理
 ```c++
 ll C(ll x, ll y) {
     if(x>=MOD)
@@ -1009,8 +1013,8 @@ ll modsqrt(ll a,ll p){
 ```
 ---
 
-#区间问题
-##莫队算法
+# 区间问题
+## 莫队算法
 ```c++
 #include<cstdio>
 #include<cmath>
@@ -1071,7 +1075,7 @@ int main() {
     return 0;
 }
 ```
-##fzu2224
+## fzu2224
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -1175,7 +1179,7 @@ scanf("%d%d", &n, &m);
     return 0;
 }
 ```
-##Treap
+## Treap
 ```c++
 #include<bits/stdc++.h>
 using namespace std;
@@ -1262,7 +1266,7 @@ struct Treap {
     }
 };
 ```
-##树上莫队cot2
+## 树上莫队cot2
 ```c++
 #include<cstdio>
 #include<cmath>
@@ -1596,7 +1600,7 @@ int main() {
 
 ***
 
-##HJTree
+## HJTree
 ```c++
 // HDU 2665
 #include<cstdio>
@@ -1659,7 +1663,7 @@ int main() {
 ```
 ***
 
-##划分树
+## 划分树
 ```c++
 #include<stdio.h>
 #include<algorithm>
@@ -1754,7 +1758,7 @@ int main()
 }
 ```
 ***
-##TreeinTree
+## TreeinTree
 ```c++
 //HYSBZ - 3295
 //树套树的空间一般很大，由于树状数组的结点大小一般较小，可以使用动态线段树，当然也可以使用平衡树
@@ -1846,61 +1850,537 @@ int main() {
 
 ***
 
-#数学
-##FFT
+# 数学
+## FFT
 ```c++
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>//don't use this in poj, fzu, zoj
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+typedef long long ll;
 using namespace std;
-const int MaxN = 262144;
-const double PI = 3.14159265358979;
-complex<double> fft_pow[MaxN];
-void fft(
-       const complex<double> *a,
-       const int &n, const int &step,
-       complex<double> *out,
-       const int type)
-{
-   if (n == 1) {
-       out[0] = a[0];
-       return;
-   }
-   int m = n >> 1;
-   fft(a, m, step << 1, out, type);
-   fft(a + step, m, step << 1, out + m, type);
-   for (int i = 0; i < m; i++) {
-       complex<double> even = out[i];
-       complex<double> odd = out[i + m];
-       if (type == 1) odd *= fft_pow[i * step];
-       else odd /= fft_pow[i * step];
-       out[i] = even + odd;
-       out[i + m] = even - odd;
-   }
+const int MAXN = (1<<18)+10;
+const double pi = acos(-1.0);
+
+struct Complex{
+    double r, i;
+    Complex(double _r=0, double _i=0)
+        :r(_r), i(_i){}
+    Complex operator + (const Complex& b) {
+        return Complex(r+b.r, i+b.i);
+    }
+    Complex operator - (const Complex& b) {
+        return Complex(r-b.r, i-b.i);
+    }
+    Complex operator * (const Complex& b) {
+        return Complex(r*b.r-i*b.i, r*b.i+i*b.r);
+    }
+    Complex operator / (double b) {
+        return Complex(r/b, i/b);
+    }
+    Complex conj() {
+        return Complex(r, -i);
+    }
+};
+char s[MAXN], t[MAXN];
+int rev[MAXN];
+Complex w[MAXN];
+int geth(int x) {
+    int ret=0;
+    while ((1<<ret) < x)
+        ++ret;
+    return ret;
 }
-void fft(
-       const complex<double> *a, const complex<double> *b,
-       int n,
-       complex<double> *res)
-{
-   int tn;
-   for (tn = 1; tn < n + n; tn <<= 1);
-   n = tn;
-   for (int i = 0; i < n; i++)
-       fft_pow[i] = exp(complex<double>(0.0, -2 * PI * i / n));
-   static complex<double> ta[MaxN];
-   static complex<double> tb[MaxN];
-   fft(a, n, 1, ta, 1);
-   fft(b, n, 1, tb, 1);
-   for (int i = 0; i < n; i++)
-       ta[i] *= tb[i];
-   fft(ta, n, 1, res, -1);
-   for (int i = 0; i < n; i++)
-       res[i] /= n;
+void fft_prepare(int n, int h) {
+    rev[0]=0;
+    rep(i, 1, n) {
+        rev[i]=rev[i>>1]>>1|((i&1)<<(h-1));
+    }
+    rep(i, 0, n) {
+        w[i]=Complex(cos(2*pi*i/n), sin(2*pi*i/n));
+        //w[i+(n>>1)]=Complex(-w[i].r, -w[i].i);
+    }
+    w[n]=Complex(1,0);
+}
+void dft(Complex *a, int n, int h, int on) {
+    rep(i, 0, n) {
+        if(i<rev[i]) swap(a[i], a[rev[i]]);
+    }
+    for(int s=1 ; s<h+1; ++s) {
+        int m=1<<s;
+        int mid=m>>1;
+        int stp=n/m;
+        for(Complex *p=a; p<a+n; p+=m) {
+            for(int i=0; i<mid; ++i) {
+                Complex t=p[mid+i];
+                if (on==1) t=t*w[i*stp];
+                else t=t*w[n-i*stp];
+                p[mid+i] = p[i]-t;
+                p[i] = p[i]+t;
+            }
+        }
+    }
+    if (on==-1) {
+        rep(i, 0, n) {
+            a[i]=a[i]/n;
+        }
+    }
+}
+void solve() {
+    static Complex a[MAXN], b[MAXN];
+    static int out[MAXN];
+    int n=strlen(s);
+    int m=strlen(t);
+    int h=geth(n+m);
+    int tn=1<<h;
+    fft_prepare(tn,h);
+    rep(i, 0, tn) {
+        b[i]=Complex();
+    }
+    rep(i, 0, n) {
+        b[i].r = s[n-i-1]-'0';
+    }
+    rep(i, 0, m) {
+        b[i].i = t[m-i-1]-'0';
+    }
+    dft(b, tn, h, 1);
+    rep(i, 0, tn) {
+        int j=(tn-i)&(tn-1);
+        a[i] = (b[i]*b[i]-b[j].conj()*b[j].conj())*Complex(0, -0.25);
+    }
+    dft(a, tn, h, -1);
+    int len=0, x=0;
+    CLR(out);
+    rep(i, 0, tn) {
+        x=int(x+a[i].r+0.5);
+        out[i]=x%10;
+        x/=10;
+        if(out[i]) len=i+1;
+    }
+    while (x) {
+        out[len++]=x%10;
+        x/=10;
+    }
+    while (len>1&&out[len-1]==0) {
+        --len;
+    }
+    if (!len) len=1;
+    drep(i, len-1, -1)
+        printf("%d", out[i]);
+    puts("");
+}
+int main() {
+    while(~sf("%s%s", s, t)) {
+        solve();
+    }
+    return 0;
 }
 ```
 
 ---
 
-##高精度
+## NTT
+```c++
+#include <bits/stdc++.h>
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+typedef long long ll;
+using namespace std;
+const int MAXN = 1<<19;
+const ll MOD = 998244353ll;
+ll inv[MAXN];
+ll fact[MAXN], ifact[MAXN];
+void init() {
+    inv[1]=1;
+    rep(i, 2, MAXN)
+        inv[i] = -(MOD/i)*inv[MOD%i]%MOD;
+    fact[0] = ifact[0] = 1;
+    rep(i, 1, MAXN) {
+        fact[i] = i*fact[i-1]%MOD;
+        ifact[i] = inv[i]*ifact[i-1]%MOD;
+    }
+}
+ll c[MAXN], s[MAXN];
+ll mypow(ll a, ll x) {
+    ll ret=1;
+    while(x) {
+        if(x&1) ret=ret*a%MOD;
+        a=a*a%MOD;
+        x >>= 1;
+    }
+    return ret;
+}
+int rev(int x, int n) {
+    int ret=0;
+    while(n>1) {
+        ret =ret<<1|(x&1);
+        n>>=1;
+        x>>=1;
+    }
+    return ret;
+}
+void ntt(ll* a, int n, int t) {
+    rep(i, 0, n) {
+        int rv = rev(i,n);
+        if(i<rv) swap(a[i], a[rv]);
+    }
+    ll g=1;
+    if(t==1) g=3;
+    else g=inv[3];
+    for(int m=2; m<n+1; m<<=1) {
+        ll wm= mypow(g, (MOD-1)/m);
+        int mid=m>>1;
+        for(ll *p=a; p<a+n; p+=m) {
+            ll w=1;
+            ll *a1=p, *a2=p+mid;
+            rep(i, 0, mid) {
+                ll t=w*(*a2);
+                *a2 = (*a1-t)%MOD;
+                *a1 = (*a1+t)%MOD;
+                w = w*wm%MOD;
+                ++a1, ++a2;
+            }
+        }
+    }
+}
+void fft(ll *a, ll* b, int n) {
+    int tn=MAXN;
+    while(tn/4>=n) tn>>=1;
+    ntt(a, tn, 1);
+    ntt(b, tn, 1);
+    rep(i, 0, tn)
+        a[i] = a[i]*b[i]%MOD;
+    ntt(a, tn, -1);
+    rep(i, 0, tn)
+        a[i]=a[i]*inv[tn]%MOD;
+}
+int main() {
+    int n;
+    init();
+    while(~sf("%d", &n)) {
+        ++n;
+        CLR(s); CLR(c);
+        drep(i, n-1, -1) {
+            sf("%I64d", c+i);
+            c[i] = c[i]*fact[n-1-i]%MOD;
+        }
+        int m;
+        sf("%d", &m);
+        ll sum=0, tot=1;
+        while(m--) {
+            ll x;sf("%I64d", &x);
+            sum = sum-x;
+        }
+        sum %= MOD;
+        rep(i, 0, n) {
+            s[i] = tot*ifact[i]%MOD;
+            tot = tot*sum%MOD;
+        }
+        fft(c,s,n);
+        rep(i, 0, n) {
+            ll ans=c[n-1-i]*ifact[i]%MOD;
+            if(ans<0) ans+=MOD;
+            printf("%lld ", ans);
+```
+---
+
+## FWT
+```c++
+#include <bits/stdc++.h>//don't use this in poj, fzu, zoj
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+typedef long long ll;
+using namespace std;
+const int MAXN = 3e5+1e3;
+int a[MAXN], b[MAXN], n;
+void fwt(int* a, int n, int t) {
+    for(int d=2; d<=n; d<<=1) {
+        int m=d>>1;
+        for(int i=0; i<n; i+=d) {
+            for(int j=0; j<m; ++j) {
+                int t=a[i+j+m];
+                a[i+j+m]=a[i+j]-t;
+                a[i+j] += t;
+            }
+        }
+    }
+    if(t==-1) {
+        rep(i, 0, n) {
+            a[i]/=n;
+        }
+    }
+}
+void solve() {
+    CLR(a);
+    CLR(b);
+    sf("%d", &n);
+    rep(i, 0, n) {
+        sf("%d", a+i);
+    }
+    rep(i, 0, n) {
+        sf("%d", b+i);
+    }
+    int tn=1;
+    while (tn<n)   tn<<=1;
+    fwt(a, tn, 1);
+    fwt(b, tn, 1);
+    rep(i, 0, tn) {
+        a[i]*=b[i];
+    }
+    fwt(a, tn, -1);
+    rep(i, 0, n) {
+        pf("%d%c", a[i], " \n"[i==n-1]);
+    }
+}
+int main() {
+    int t=1, ca=0;
+    while(t--) {
+        solve();
+    }
+    return 0;
+}
+
+```
+---
+
+## 拆系数FFT
+
+```c++
+#include <bits/stdc++.h> //don't use this in poj, fzu, zoj
+#define rep(a, b, c) for (int(a) = (b); (a) < (c); ++(a))
+#define drep(a, b, c) for (int(a) = (b); (a) > (c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+typedef long long ll;
+using namespace std;
+const int MAXN = (1 << 17) + 10;
+const int MOD = 1e9 + 7;
+const double pi = acos(-1.0);
+struct Complex {
+  double r, i;
+  Complex(double _r = 0, double _i = 0) : r(_r), i(_i) {}
+  Complex operator+(const Complex &b) { return Complex(r + b.r, i + b.i); }
+  Complex operator-(const Complex &b) { return Complex(r - b.r, i - b.i); }
+  Complex operator*(const Complex &b) {
+    return Complex(r * b.r - i * b.i, r * b.i + i * b.r);
+  }
+  Complex conj() {
+      return Complex(r, -i);
+  }
+};
+ll a[MAXN], b[MAXN], inv[MAXN], c[MAXN];
+int geth(int x) {
+  int ret = 0, tot = 1;
+  while (tot < x) {
+    tot <<= 1;
+    ++ret;
+  }
+  return ret;
+}
+Complex w[MAXN];
+int rev[MAXN];
+void fft_prepare(int n, int h) {
+  rep(i, 0, n >> 1) {
+    w[i] = Complex(cos(2 * pi * i / n), sin(2 * pi * i / n));
+    w[i + (n >> 1)] = Complex(-w[i].r, -w[i].i);
+  }
+  w[n] = w[0];
+  rev[0] = 0;
+  rep(i, 0, n) {
+    rev[i] = rev[i >> 1] >> 1;
+    if (i & 1)
+      rev[i] |= 1 << (h - 1);
+  }
+}
+void dft(Complex *a, int n, int h, int on) {
+  rep(i, 0, n) {
+    if (i < rev[i])
+      swap(a[i], a[rev[i]]);
+  }
+  for (int m = 2; m < n + 1; m *= 2) {
+    int stp = n / m, mid = m >> 1;
+    Complex t;
+    for (Complex *p = a; p < a + n; p += m) {
+      rep(i, 0, mid) {
+        if (on > 0)
+          t = w[i * stp] * p[mid + i];
+        else
+          t = w[(n - i * stp) & (n - 1)] * p[mid + i];
+        p[mid + i] = p[i] - t;
+        p[i] = p[i] + t;
+      }
+    }
+  }
+  if (on < 0) {
+    rep(i, 0, n) a[i] = Complex(a[i].r / n, a[i].i / n);
+  }
+}
+void conv(ll *a, ll *b, ll* z, int n) {
+  int h = geth(n * 2);
+  int tn = 1 << h;
+  fft_prepare(tn, h);
+  static Complex wa[MAXN], wb[MAXN];
+  static Complex wc[MAXN], wd[MAXN];
+  rep(i, 0, tn) {
+    if (i < n) {
+      wa[i] = Complex(a[i] >> 15, a[i] & 32767);
+      wb[i] = Complex(b[i] >> 15, b[i] & 32767);
+    } else
+      wb[i] = wa[i] = Complex();
+  }
+  dft(wa, tn, h, 1);
+  dft(wb, tn, h, 1);
+  rep(i, 0, tn) {
+      int j=(tn-i)&(tn-1);
+      Complex dfta = (wa[i]+wa[j].conj())*Complex(0.5,0);
+      Complex dftx = (wa[i]-wa[j].conj())*Complex(0, -0.5);
+      Complex dftb = (wb[i]+wb[j].conj())*Complex(0.5,0);
+      Complex dfty = (wb[i]-wb[j].conj())*Complex(0, -0.5);
+      wc[i] = dfta*dftb+dfta*dfty*Complex(0,1);
+      wd[i] = dftb*dftx+dftx*dfty*Complex(0,1);
+  }
+  dft(wc, tn, h, -1);
+  dft(wd, tn, h, -1);
+  rep(i, 0, tn) {
+      ll a=ll(wc[i].r+0.5)%MOD;
+      ll b=ll(wc[i].i+0.5)%MOD;
+      ll c=ll(wd[i].r+0.5)%MOD;
+      ll d=ll(wd[i].i+0.5)%MOD;
+      z[i] = ((a<<30)+((b+c)<<15)+d)%MOD;
+      if(z[i]<0) z[i] += MOD;
+  }
+}
+void solve() {
+  int n, k;
+  sf("%d%d", &n, &k);
+  rep(i, 0, n) { sf("%I64d", a + i); }
+  b[0] = inv[1] = 1;
+  rep(i, 2, n) { inv[i] = -(MOD / i) * inv[MOD % i] % MOD; }
+  rep(i, 1, n) {
+      b[i] = b[i - 1] * (k - 1 + i) % MOD * inv[i] % MOD;
+      if(b[i]<0) b[i] += MOD;
+  }
+  conv(a, b, c, n);
+  rep(i, 0, n) {
+     printf("%lld\n", c[i]);
+  }
+}
+int main() {
+  int t = 1, ca = 0;
+
+  while (t--) {
+
+    solve();
+  }
+  return 0;
+}
+```
+---
+
+## 线性递推式
+
+```c++
+#include <bits/stdc++.h>
+using namespace std;
+#define rep(i,a,n) for (int i=a;i<n;i++)
+#define per(i,a,n) for (int i=n-1;i>=a;i--)
+#define pb push_back
+#define mp make_pair
+#define all(x) (x).begin(),(x).end()
+#define fi first
+#define se second
+#define SZ(x) ((int)(x).size())
+typedef vector<int> VI;
+typedef long long ll;
+typedef pair<int,int> PII;
+const ll mod=1000000007;
+ll powmod(ll a,ll b) {ll res=1;a%=mod; assert(b>=0); for(;b;b>>=1){if(b&1)res=res*a%mod;a=a*a%mod;}return res;}
+// head
+
+int _,n;
+namespace linear_seq {
+    const int N=10010;
+    ll res[N],base[N],_c[N],_md[N];
+
+    vector<int> Md;
+    void mul(ll *a,ll *b,int k) {
+        rep(i,0,k+k) _c[i]=0
+        rep(i,0,k) if (a[i]) rep(j,0,k) _c[i+j]=(_c[i+j]+a[i]*b[j])%mod;
+        for (int i=k+k-1;i>=k;i--) if (_c[i])
+            rep(j,0,SZ(Md)) _c[i-k+Md[j]]=(_c[i-k+Md[j]]-_c[i]*_md[Md[j]])%mod;
+        rep(i,0,k) a[i]=_c[i];
+    }
+    int solve(ll n,VI a,VI b) { // a 系数 b 初值 b[n+1]=a[0]*b[n]+...
+//        printf("%d\n",SZ(b));
+        ll ans=0,pnt=0;
+        int k=SZ(a);
+        assert(SZ(a)==SZ(b));
+        rep(i,0,k) _md[k-1-i]=-a[i];_md[k]=1;
+        Md.clear();
+        rep(i,0,k) if (_md[i]!=0) Md.push_back(i);
+        rep(i,0,k) res[i]=base[i]=0;
+        res[0]=1;
+        while ((1ll<<pnt)<=n) pnt++;
+        for (int p=pnt;p>=0;p--) {
+            mul(res,res,k);
+            if ((n>>p)&1) {
+                for (int i=k-1;i>=0;i--) res[i+1]=res[i];res[0]=0;
+                rep(j,0,SZ(Md)) res[Md[j]]=(res[Md[j]]-res[k]*_md[Md[j]])%mod;
+            }
+        }
+        rep(i,0,k) ans=(ans+res[i]*b[i])%mod;
+        if (ans<0) ans+=mod;
+        return ans;
+    }
+    VI BM(VI s) {
+        VI C(1,1),B(1,1);
+        int L=0,m=1,b=1;
+        rep(n,0,SZ(s)) {
+            ll d=0;
+            rep(i,0,L+1) d=(d+(ll)C[i]*s[n-i])%mod;
+            if (d==0) ++m;
+            else if (2*L<=n) {
+                VI T=C;
+                ll c=mod-d*powmod(b,mod-2)%mod;
+                while (SZ(C)<SZ(B)+m) C.pb(0);
+                rep(i,0,SZ(B)) C[i+m]=(C[i+m]+c*B[i])%mod;
+                L=n+1-L; B=T; b=d; m=1;
+            } else {
+                ll c=mod-d*powmod(b,mod-2)%mod;
+                while (SZ(C)<SZ(B)+m) C.pb(0);
+                rep(i,0,SZ(B)) C[i+m]=(C[i+m]+c*B[i])%mod;
+                ++m;
+            }
+        }
+        return C;
+    }
+    int gao(VI a,ll n) {
+        VI c=BM(a);
+        c.erase(c.begin());
+        rep(i,0,SZ(c)) c[i]=(mod-c[i])%mod;
+        return solve(n,c,VI(a.begin(),a.begin()+SZ(c)));
+    }
+};
+
+int main() {
+    for (scanf("%d",&_);_;_--) {
+        scanf("%d",&n);
+        printf("%d\n",linear_seq::gao(VI{2,24,96,416,1536,5504,18944,64000,212992,702464},n-1));
+    }
+}
+```
+
+---
+## 高精度
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -1960,7 +2440,7 @@ struct Bigint{
         c.l = a.l+b.l;
         for(int i=0; i<a.l; ++i)
             for(int j=0; j<b.l; ++j)
-                c.d[i+j] += a.d[i]*b.d[i];
+                c.d[i+j] += a.d[i]*b.d[j];
         for(int i=0; i<c.l; ++i)
             if(c.d[i]>MAXB) {
                 c.d[i+1] += c.d[i]/MAXB;
@@ -2067,8 +2547,8 @@ struct Bigint{
 
 ---
 
-#图论
-##LCA tarjian
+# 图论
+## LCA tarjian
 ```c++
 #include<iostream>
 #include<vector>
@@ -2146,8 +2626,8 @@ int main() {
 
 ---
 
-#<big>字符串</big>
-##后缀数组
+# <big>字符串</big>
+## 后缀数组
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -2202,7 +2682,7 @@ void calheight(char *s, int n) {
     }
 }
 ```
-##最长回文子串
+## 最长回文子串
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -2232,7 +2712,7 @@ void solve(char *s) {
     manacher(t);
 }
 ```
-##ShiftOr
+## ShiftOr
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -2262,7 +2742,7 @@ int main() {
 	return 0;
 }
 ```
-##LCP
+## LCP
 ```c++
 #include<cstdio>
 #include<cstring>
@@ -2311,7 +2791,7 @@ int main() {
 ```
 
 
-##SAM
+## SAM
 ```c++
 const int MAXN = 2e5+1e3;
 struct state {

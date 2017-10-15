@@ -49,9 +49,7 @@ void solve() {
 }
 int main() {
     int t=1, ca=0;
-
     while(t--) {
-
         solve();
     }
     return 0;

@@ -1,12 +1,4 @@
-#include <cstdio>
-#include <cstring>
-#include <cmath>
-#include <algorithm>
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
-#include <cassert>
+#include <bits/stdc++.h>
 using namespace std;
 #define rep(i,a,n) for (int i=a;i<n;i++)
 #define per(i,a,n) for (int i=n-1;i>=a;i--)

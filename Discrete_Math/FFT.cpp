@@ -118,7 +118,6 @@ void solve() {
 }
 int main() {
     while(~sf("%s%s", s, t)) {
-
         solve();
     }
     return 0;
