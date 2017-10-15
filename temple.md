@@ -1434,7 +1434,6 @@ int main() {
 	return 0;
 }
 ```
-<<<<<<< HEAD
 
 ##SAM
 ```
@@ -1570,5 +1569,3 @@ int main() {
     return 0;
 }
 ```
-=======
->>>>>>> 9c1ee62927a23d90011e47e7feceef2e5b9d68be
