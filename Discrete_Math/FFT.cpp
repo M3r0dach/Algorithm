@@ -1,89 +1,125 @@
-//HDU 4609
-#include<cstdio>
-#include<cstring>
-#include<complex>
-#include<algorithm>
-#define FIN freopen("input.txt", "r", stdin);
-#define FOUT freopen("out.txt", "w", stdout);
+#include <bits/stdc++.h>//don't use this in poj, fzu, zoj
+#define rep(a,b,c) for(int (a)=(b); (a)<(c); ++(a))
+#define drep(a,b,c) for(int (a)=(b); (a)>(c); --(a))
+#define CLR(x) memset(x, 0, sizeof(x))
+#define sf scanf
+#define pf printf
+typedef long long ll;
 using namespace std;
-const int MAXN = 1e5+1e3;
-const int MAXB = 262144;
-const double PI = 3.14159265358979;
-typedef long long LL;
-complex <double> w[MAXB];
-complex <double> fft_pow[MAXB];
-void DFT(const complex<double>* a,
-         const int& n, const int& step,
-         complex<double> *out,
-         const int& type) {
-    if(n==1) {
-        out[0] = a[0];
-        return;
+const int MAXN = (1<<18)+10;
+const double pi = acos(-1.0);
+
+struct Complex{
+    double r, i;
+    Complex(double _r=0, double _i=0)
+        :r(_r), i(_i){}
+    Complex operator + (const Complex& b) {
+        return Complex(r+b.r, i+b.i);
     }
-    int m = n>>1;
-    DFT(a, m, step<<1, out, type);
-    DFT(a+step, m, step<<1, out+m, type);
-    for(int i=0; i<m; ++i) {
-        complex<double> even = out[i];
-        complex<double> odd = out[i+m];
-        if(type==1)
-            odd *= fft_pow[i*step];
-        else odd /= fft_pow[i*step];
-        out[i] = even+odd;
-        out[i+m] = even-odd;
+    Complex operator - (const Complex& b) {
+        return Complex(r-b.r, i-b.i);
+    }
+    Complex operator * (const Complex& b) {
+        return Complex(r*b.r-i*b.i, r*b.i+i*b.r);
+    }
+    Complex operator / (double b) {
+        return Complex(r/b, i/b);
+    }
+    Complex conj() {
+        return Complex(r, -i);
+    }
+};
+char s[MAXN], t[MAXN];
+int rev[MAXN];
+Complex w[MAXN];
+int geth(int x) {
+    int ret=0;
+    while ((1<<ret) < x)
+        ++ret;
+    return ret;
+}
+void fft_prepare(int n, int h) {
+    rev[0]=0;
+    rep(i, 1, n) {
+        rev[i]=rev[i>>1]>>1|((i&1)<<(h-1));
+    }
+    rep(i, 0, n) {
+        w[i]=Complex(cos(2*pi*i/n), sin(2*pi*i/n));
+        //w[i+(n>>1)]=Complex(-w[i].r, -w[i].i);
+    }
+    w[n]=Complex(1,0);
+}
+void dft(Complex *a, int n, int h, int on) {
+    rep(i, 0, n) {
+        if(i<rev[i]) swap(a[i], a[rev[i]]);
+    }
+    for(int s=1 ; s<h+1; ++s) {
+        int m=1<<s;
+        int mid=m>>1;
+        int stp=n/m;
+        for(Complex *p=a; p<a+n; p+=m) {
+            for(int i=0; i<mid; ++i) {
+                Complex t=p[mid+i];
+                if (on==1) t=t*w[i*stp];
+                else t=t*w[n-i*stp];
+                p[mid+i] = p[i]-t;
+                p[i] = p[i]+t;
+            }
+        }
+    }
+    if (on==-1) {
+        rep(i, 0, n) {
+            a[i]=a[i]/n;
+        }
     }
 }
-void FFT(LL * a, int& n) {
-    static complex<double> ta[MAXB];
-    static complex<double> tb[MAXB];
-    int tn, s;
-    for(tn=1; tn<=n+n; tn<<=1);
-    for(int i=0; i<tn; ++i)
-       if(i<=n) ta[i] = a[i];
-       else ta[i] = 0;
-    n = tn; s= MAXB/tn;
-    for(int i=0; i<n; ++i)
-        fft_pow[i] = w[i*s];
-    DFT(ta, n, 1, tb, 1);
-    for(int i=0; i<n; ++i)
-        tb[i] *= tb[i];
-    DFT(tb, n, 1, ta, -1);
-    for(int i=0; i<n; ++i)
-        a[i] = LL(ta[i].real()/n+0.5);
+void solve() {
+    static Complex a[MAXN], b[MAXN];
+    static int out[MAXN];
+    int n=strlen(s);
+    int m=strlen(t);
+    int h=geth(n+m);
+    int tn=1<<h;
+    fft_prepare(tn,h);
+    rep(i, 0, tn) {
+        b[i]=Complex();
+    }
+    rep(i, 0, n) {
+        b[i].r = s[n-i-1]-'0';
+    }
+    rep(i, 0, m) {
+        b[i].i = t[m-i-1]-'0';
+    }
+    dft(b, tn, h, 1);
+    rep(i, 0, tn) {
+        int j=(tn-i)&(tn-1);
+        a[i] = (b[i]*b[i]-b[j].conj()*b[j].conj())*Complex(0, -0.25);
+    }
+    dft(a, tn, h, -1);
+    int len=0, x=0;
+    CLR(out);
+    rep(i, 0, tn) {
+        x=int(x+a[i].r+0.5);
+        out[i]=x%10;
+        x/=10;
+        if(out[i]) len=i+1;
+    }
+    while (x) {
+        out[len++]=x%10;
+        x/=10;
+    }
+    while (len>1&&out[len-1]==0) {
+        --len;
+    }
+    if (!len) len=1;
+    drep(i, len-1, -1)
+        printf("%d", out[i]);
+    puts("");
 }
 int main() {
-    int T, n, len;
-    static int a[MAXN];
-    static LL cnt, total, b[MAXB];
-    //FIN;//FOUT;
-    for(int i=0; i<MAXB; ++i)
-        w[i] = complex<double>(cos(2*PI*i/MAXB), sin(2*PI*i/MAXB));
-    scanf("%d", &T);
-    while(T--) {
-        scanf("%d", &n);
-        memset(b, 0, sizeof(b));
-        len = 0;
-        for(int i=0; i<n; ++i) {
-            scanf("%d", a+i);
-            len = len>a[i]?len:a[i];
-            ++b[a[i]];
-        }
-        sort(a, a+n);
-        FFT(b, len);
-        for(int i=0; i<n; ++i)
-            --b[a[i]+a[i]];
-        for(int i=1; i<len; ++i)
-            b[i] = b[i]/2 + b[i-1];
-        cnt = 0;
-        for(int i=0; i<n; ++i) {
-            cnt += b[len-1]-b[a[i]];
-            cnt -= (LL)(n-i-1)*i;
-            cnt -= n-1;
-            cnt -= (LL)(n-i-1)*(n-i-2)/2;
-        }
-        total = (LL)n*(n-1)/2*(n-2)/3;
-        long double res = (long double)(cnt)/total;
-        printf("%.7lf\n", (double)res);
+    while(~sf("%s%s", s, t)) {
+
+        solve();
     }
     return 0;
 }
