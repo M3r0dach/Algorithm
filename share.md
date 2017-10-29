@@ -1,3 +1,6 @@
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
 # 数学方面的有关算法及应用
 
 标签（空格分隔）： 数论 离散数学
